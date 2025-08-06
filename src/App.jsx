@@ -26,9 +26,13 @@ import Lottie from 'lottie-react';
 import chatBotAnimation from './chatbot-animation.json';
 import DownloadIcon from '@mui/icons-material/Download';
 
+import { v4 as uuidv4 } from 'uuid';
+
 
 
 export default function ChatApp() {
+  const [sessionId] = useState(() => uuidv4()); 
+
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -59,8 +63,10 @@ export default function ChatApp() {
     setLoading(true);
 
     try {
-      const res = await axios.post('https://bot-be-00pc.onrender.com/api/chat', {
+
+      const res = await axios.post('http://localhost:5000/api/chat', {
         message: input,
+        sessionId, // 🧠 This enables memory
       });
 
       const botReply = res.data.reply || "🤖 Sorry, I couldn't generate a response.";
@@ -107,63 +113,63 @@ export default function ChatApp() {
     }, 2000);
   };
 
-const exportChatToPDF = () => {
-  const doc = new jsPDF();
-  let y = 15;
+  const exportChatToPDF = () => {
+    const doc = new jsPDF();
+    let y = 15;
 
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
 
-  messages.forEach((msg) => {
-    const prefix = msg.role === 'user' ? 'User:' : 'AI:';
-    const content = msg.content;
+    messages.forEach((msg) => {
+      const prefix = msg.role === 'user' ? 'User:' : 'AI:';
+      const content = msg.content;
 
-    const parts = content.split(/```(?:\w*\n)?([\s\S]*?)```/g);
+      const parts = content.split(/```(?:\w*\n)?([\s\S]*?)```/g);
 
-    parts.forEach((part, i) => {
-      const isCode = i % 2 === 1;
+      parts.forEach((part, i) => {
+        const isCode = i % 2 === 1;
 
-      if (isCode) {
-        // Highlight code block
-        const codeLines = doc.splitTextToSize(part.trim(), 180);
-        const boxHeight = codeLines.length * 6 + 4;
+        if (isCode) {
+          // Highlight code block
+          const codeLines = doc.splitTextToSize(part.trim(), 180);
+          const boxHeight = codeLines.length * 6 + 4;
 
-        doc.setFillColor(240, 240, 240);
-        doc.rect(10, y, 190, boxHeight, 'F');
+          doc.setFillColor(240, 240, 240);
+          doc.rect(10, y, 190, boxHeight, 'F');
 
-        doc.setFont('courier', 'normal');
-        doc.setTextColor(0, 0, 0);
+          doc.setFont('courier', 'normal');
+          doc.setTextColor(0, 0, 0);
 
-        codeLines.forEach((line) => {
-          doc.text(line, 12, y + 6);
-          y += 6;
-        });
+          codeLines.forEach((line) => {
+            doc.text(line, 12, y + 6);
+            y += 6;
+          });
 
-        y += 15; 
-      } else {
-        const lines = doc.splitTextToSize(`${prefix} ${part.trim()}`, 180);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(20, 20, 20);
+          y += 15;
+        } else {
+          const lines = doc.splitTextToSize(`${prefix} ${part.trim()}`, 180);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(20, 20, 20);
 
-        lines.forEach((line) => {
-          doc.text(line, 10, y);
-          y += 7;
-        });
+          lines.forEach((line) => {
+            doc.text(line, 10, y);
+            y += 7;
+          });
 
-        y += 4;
-      }
+          y += 4;
+        }
 
-      if (y > 270) {
-        doc.addPage();
-        y = 15;
-      }
+        if (y > 270) {
+          doc.addPage();
+          y = 15;
+        }
+      });
+
+      y += 6;
     });
 
-    y += 6;
-  });
-
-  doc.save('chat-history.pdf');
-};
+    doc.save('chat-history.pdf');
+  };
 
 
   return (
@@ -572,9 +578,9 @@ const exportChatToPDF = () => {
 //       <Box sx={{ px: 2, mb: 1.5, py: 1.5, bgcolor: '#181c23', textAlign: 'center' }}>
 //         <Typography component="pre" sx={{ fontFamily: 'monospace', fontSize: '3px', color: '#39FF14' }}> {`██████╗ ██████╗  █████╗ ███████╗ █████╗ ██████╗       ██████╗  ██████╗ ████████╗
 // // ██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔══██╗██╔══██╗      ██╔══██╗██╔═══██╗╚══██╔══╝
-// // ██████╔╝██████╔╝███████║███████╗███████║██║  ██║█████╗██████╔╝██║   ██║   ██║   
-// // ██╔═══╝ ██╔══██╗██╔══██║╚════██║██╔══██║██║  ██║╚════╝██╔══██╗██║   ██║   ██║   
-// // ██║     ██║  ██║██║  ██║███████║██║  ██║██████╔╝      ██████╔╝╚██████╔╝   ██║   
+// // ██████╔╝██████╔╝███████║███████╗███████║██║  ██║█████╗██████╔╝██║   ██║   ██║
+// // ██╔═══╝ ██╔══██╗██╔══██║╚════██║██╔══██║██║  ██║╚════╝██╔══██╗██║   ██║   ██║
+// // ██║     ██║  ██║██║  ██║███████║██║  ██║██████╔╝      ██████╔╝╚██████╔╝   ██║
 // // ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝       ╚═════╝  ╚═════╝    ╚═╝`}</Typography>
 //       </Box>
 
